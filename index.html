@@ -95,13 +95,13 @@
                 loading.classList.add('hidden');
 
                 if (response.ok) {
-                    document.getElementById('res-name').innerText = data['Customer Name'] || '-';
-                    document.getElementById('res-status').innerText = data['Status'] || '-';
-                    document.getElementById('res-route').innerText = data['လမ်းကြောင်း'] || '-';
-                    document.getElementById('res-current').innerText = data['လက်ရှိအခြေအနေ'] || '-';
+                    document.getElementById('res-name').innerText = data['Name'] || '-';
+                    document.getElementById('res-status').innerText = data['Current status'] || '-';
+                    document.getElementById('res-route').innerText = data['Route'] || '-';
+                    document.getElementById('res-current').innerText = data['Current Status'] || '-';
                     document.getElementById('res-weight').innerText = data['Weight (kg)'] || '0';
-                    document.getElementById('res-baht').innerText = data['စုစုပေါင်းကျသင့်ငွေ (Baht)'] || '0';
-                    document.getElementById('res-eta').innerText = data['ခန့်မှန်း ရောက်ရှိမည့် ရက်'] || '-';
+                    document.getElementById('res-baht').innerText = data['Total Cost (Baht)'] || '0';
+                    document.getElementById('res-eta').innerText = data['ETA'] || '-';
                     
                     result.classList.remove('hidden');
                 } else {
