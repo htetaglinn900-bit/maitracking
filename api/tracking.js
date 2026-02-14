@@ -49,13 +49,13 @@ export default async function handler(req, res) {
         };
 
         const result = {
-            'Customer Name': getValue(page['Customer Name']),
-            'Status': getValue(page['Status']),
-            'လမ်းကြောင်း': getValue(page['လမ်းကြောင်း']),
-            'လက်ရှိအခြေအနေ': getValue(page['လက်ရှိအခြေအနေ']),
+            'Name': getValue(page['Name']),
+            'Current status': getValue(page['Current status']),
+            'Route': getValue(page['Route']),
+            'Current Status': getValue(page['Current Status']),
             'Weight (kg)': getValue(page['Weight (kg)']),
-            'စုစုပေါင်းကျသင့်ငွေ (Baht)': getValue(page['စုစုပေါင်းကျသင့်ငွေ (Baht)']),
-            'ခန့်မှန်း ရောက်ရှိမည့် ရက်': getValue(page['ခန့်မှန်း ရောက်ရှိမည့် ရက်']),
+            'Total Cost (Baht)': getValue(page['Total Cost (Baht)']),
+            'ETA': getValue(page['ETA']),
         };
 
         return res.status(200).json(result);
