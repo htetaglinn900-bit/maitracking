@@ -37,6 +37,11 @@ export default async function handler(req, res) {
         // Notion Property တန်ဖိုးများကို ထုတ်ယူရန် Helper Function
         const getValue = (prop) => {
             if (!prop) return "";
+            // Formula column ဖြစ်နေခဲ့ရင် value ကို formula type ထဲက ပြန်ယူရပါတယ်
+    if (prop.type === 'formula') {
+        const formulaVal = prop.formula;
+        return formulaVal.number?.toString() || formulaVal.string || "0";
+    }
             switch (prop.type) {
                 case 'title': return prop.title[0]?.plain_text || "";
                 case 'rich_text': return prop.rich_text[0]?.plain_text || "";
