@@ -68,10 +68,11 @@ export default async function handler(req, res) {
 
         const result = {
             'Name': getValue(page['Name']),
-            'Current status': getValue(page['Current status']),
+            // Notion ထဲက နာမည်အတိအကျကို အောက်မှာ ပြန်စစ်ပေးပါ
+            'Current status': getValue(page['Current Status']) || getValue(page['Current status']) || "-", 
             'Route': getValue(page['Route']),
             'Weight (kg)': getValue(page['Weight (kg)']),
-            'Total Cost (Baht)': finalCost, // ပြင်ဆင်ထားသော ဈေးနှုန်း
+            'Total Cost (Baht)': finalCost,
             'ETA': getValue(page['ETA']),
         };
 
