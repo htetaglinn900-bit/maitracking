@@ -59,12 +59,23 @@ export default async function handler(req, res) {
             finalCost = getValue(page['Total Cost (Baht)']);
         }
 
+        // Professional Mapping Logic
         const result = {
             'Name': getValue(page['Name']),
-            // Blue Box ထဲမှာ "ချင်းမိုင်ဂိုဒေါင်မှ..." စာသားများပေါ်ရန်
-            'Current status': getValue(page['လက်ရှိအခြေအနေ']), 
-            // အောက်က Status တန်းမှာ Done / In progress ပေါ်ရန်
-            'Status': getValue(page['Status']),
+            
+            // ၁။ Blue Box အတွက်: နာမည်အမျိုးမျိုးကို စမ်းပြီး ဆွဲယူပါမယ်
+            'Current status': 
+                getValue(page['လက်ရှိအခြေအနေ']) || 
+                getValue(page['Current Status']) || 
+                getValue(page['Current status']) || 
+                "-",
+
+            // ၂။ Status Badge အတွက်:
+            'Status': 
+                getValue(page['Status']) || 
+                getValue(page['current status']) || 
+                "Processing",
+
             'Route': getValue(page['Route']),
             'Weight (kg)': getValue(page['Weight (kg)']),
             'Total Cost (Baht)': finalCost,
