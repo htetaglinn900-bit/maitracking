@@ -68,8 +68,10 @@ export default async function handler(req, res) {
 
         const result = {
             'Name': getValue(page['Name']),
-            // Notion ထဲက နာမည်အတိအကျကို အောက်မှာ ပြန်စစ်ပေးပါ
-            'Current status': getValue(page['Current Status']) || getValue(page['Current status']) || "-", 
+            // Blue Box အတွက်: 'Current Status' (S အကြီး) ထဲက စာသားကို ယူပါမယ်
+            'Current status': getValue(page['Current Status']), 
+            // အောက်က Status တန်းအတွက်: 'Current status' (s အသေး) ထဲက Done/In progress ကို ယူပါမယ်
+            'Status': getValue(page['Current status']),
             'Route': getValue(page['Route']),
             'Weight (kg)': getValue(page['Weight (kg)']),
             'Total Cost (Baht)': finalCost,
