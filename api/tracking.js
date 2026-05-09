@@ -18,7 +18,7 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 filter: {
-                    property: 'ပါဆယ် နံပါတ်', // Rich Text Property
+                    property: 'ပါဆယ် နံပါတ်',
                     rich_text: {
                         equals: id
                     }
@@ -37,11 +37,15 @@ export default async function handler(req, res) {
         // Notion Property တန်ဖိုးများကို ထုတ်ယူရန် Helper Function
         const getValue = (prop) => {
             if (!prop) return "";
-            // Formula column ဖြစ်နေခဲ့ရင် value ကို formula type ထဲက ပြန်ယူရပါတယ်
-    if (prop.type === 'formula') {
-        const formulaVal = prop.formula;
-        return formulaVal.number?.toString() || formulaVal.string || "0";
-    }
+            
+            if (prop.type === 'formula') {
+                const formulaVal = prop.formula;
+                // Formula ရလဒ်သည် Number သို့မဟုတ် String ဖြစ်နိုင်သည်
+                if (formulaVal.type === 'number') return formulaVal.number?.toString() || "0";
+                if (formulaVal.type === 'string') return formulaVal.string || "";
+                return "0";
+            }
+            
             switch (prop.type) {
                 case 'title': return prop.title[0]?.plain_text || "";
                 case 'rich_text': return prop.rich_text[0]?.plain_text || "";
@@ -53,13 +57,21 @@ export default async function handler(req, res) {
             }
         };
 
+        // --- ဈေးနှုန်းတွက်ချက်မှု Logic အသစ် ---
+        // ၁။ Final Formula ကို အရင်ယူကြည့်မည်
+        let finalCost = getValue(page['Total Cost (Baht) - Final']);
+        
+        // ၂။ အကယ်၍ Final ထဲမှာ ဘာမှမရှိခဲ့ရင် (သို့မဟုတ် "0" ဖြစ်နေရင်) အဟောင်းကို သုံးမည်
+        if (!finalCost || finalCost === "0") {
+            finalCost = getValue(page['Total Cost (Baht)']);
+        }
+
         const result = {
             'Name': getValue(page['Name']),
             'Current status': getValue(page['Current status']),
             'Route': getValue(page['Route']),
-            'Current Status': getValue(page['Current Status']),
             'Weight (kg)': getValue(page['Weight (kg)']),
-            'Total Cost (Baht)': getValue(page['Total Cost (Baht)']),
+            'Total Cost (Baht)': finalCost, // ပြင်ဆင်ထားသော ဈေးနှုန်း
             'ETA': getValue(page['ETA']),
         };
 
