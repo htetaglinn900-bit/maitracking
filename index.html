@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shipment Tracking App</title>
+    <title>MAI CARGO Tracking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
@@ -15,63 +15,48 @@
 </head>
 <body class="p-4 md:p-10">
     <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        <!-- Logo -->
+        <div class="text-center mb-6">
+            <img src="Logo2.png" alt="Logo" class="w-32 mx-auto">
+        </div>
+        
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">📦 ပါဆယ်ခြေရာခံမည်</h1>
         
         <!-- Search Bar -->
         <div class="flex flex-col gap-3 mb-8">
-            <input type="text" id="trackingId" placeholder="ပါဆယ် နံပါတ် ရိုက်ထည့်ပါ..." 
-                class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm text-lg">
-            <button onclick="trackShipment()" 
-                class="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 transition font-bold text-lg shadow-md active:scale-95">
-                ရှာဖွေမည်
-            </button>
+            <input type="text" id="trackingId" placeholder="ပါဆယ် နံပါတ် ရိုက်ထည့်ပါ..." class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none shadow-sm text-lg">
+            <button onclick="trackShipment()" class="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 font-bold text-lg shadow-md active:scale-95">ရှာဖွေမည်</button>
         </div>
 
-        <!-- Loading State -->
         <div id="loading" class="hidden text-center py-10">
             <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-100 h-12 w-12 mx-auto mb-4"></div>
             <p class="text-gray-500 font-medium">ရှာဖွေနေပါသည်...</p>
         </div>
 
         <!-- Result Card -->
-        <div id="result" class="hidden space-y-4 animate-fade-in">
+        <div id="result" class="hidden space-y-4">
             <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
                 <p class="text-xs text-blue-500 font-bold uppercase mb-1">လက်ရှိအခြေအနေ</p>
                 <div id="res-current" class="text-xl font-bold text-blue-900"></div>
             </div>
 
             <div class="grid grid-cols-1 gap-4 text-sm md:text-base border-t pt-4">
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-500">Customer Name</span>
-                    <span id="res-name" class="font-semibold text-gray-800 text-right"></span>
-                </div>
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-500">Status</span>
-                    <span id="res-status" class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 font-medium"></span>
-                </div>
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-500">လမ်းကြောင်း</span>
-                    <span id="res-route" class="font-semibold text-gray-800"></span>
-                </div>
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-500">Weight (kg)</span>
-                    <span id="res-weight" class="font-semibold text-gray-800"></span>
-                </div>
-                <div class="flex justify-between border-b pb-2">
-                    <span class="text-gray-500 text-blue-600">Total Cost (Baht)</span>
-                    <span id="res-baht" class="font-bold text-blue-700"></span>
-                </div>
-                <div class="flex justify-between pt-2">
-                    <span class="text-gray-500">ခန့်မှန်းရောက်ရှိရက်</span>
-                    <span id="res-eta" class="font-bold text-orange-600"></span>
-                </div>
+                <div class="flex justify-between border-b pb-2"><span class="text-gray-500">Customer Name</span><span id="res-name" class="font-semibold text-gray-800"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-gray-500">Status</span><span id="res-status" class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-gray-500">လမ်းကြောင်း</span><span id="res-route" class="font-semibold text-gray-800"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-gray-500">Weight (kg)</span><span id="res-weight" class="font-semibold text-gray-800"></span></div>
+                <div class="flex justify-between border-b pb-2"><span class="text-gray-500 text-blue-600">Total Cost (Baht)</span><span id="res-baht" class="font-bold text-blue-700"></span></div>
+                <div class="flex justify-between pt-2"><span class="text-gray-500">ခန့်မှန်းရောက်ရှိရက်</span><span id="res-eta" class="font-bold text-orange-600"></span></div>
             </div>
         </div>
 
-        <!-- Error Message -->
-        <div id="error" class="hidden text-center py-10">
-            <p class="text-red-500 font-bold text-lg">❌ ID ရှာမတွေ့ပါ!</p>
-            <p class="text-gray-400 text-sm mt-1">နံပါတ် မှန်ကန်မှု ရှိမရှိ ပြန်လည်စစ်ဆေးပါ။</p>
+        <div id="error" class="hidden text-center py-10"><p class="text-red-500 font-bold text-lg">❌ ID ရှာမတွေ့ပါ!</p></div>
+
+        <!-- Contact Section -->
+        <div class="mt-10 pt-6 border-t text-center text-xs text-gray-400">
+            <p>📍 Chiang Mai: 541/219, Kan Kaha Soi 5, Nong Hoi</p>
+            <p class="mt-1">📞 TH: +66 0924803178 | MM: +95 09 443135750</p>
+            <p class="mt-2 font-bold text-blue-400">SAFE . TRUSTED . REAL-TIME</p>
         </div>
     </div>
 
@@ -81,7 +66,6 @@
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
-
             if (!id) return alert("ကျေးဇူးပြု၍ ID ထည့်ပါ။");
 
             loading.classList.remove('hidden');
@@ -91,18 +75,16 @@
             try {
                 const response = await fetch(`/api/tracking?id=${encodeURIComponent(id)}`);
                 const data = await response.json();
-
                 loading.classList.add('hidden');
 
                 if (response.ok) {
-                    document.getElementById('res-name').innerText = data['Name'] || '-';
-                    document.getElementById('res-status').innerText = data['status'] || '-';
-                    document.getElementById('res-route').innerText = data['Route'] || '-';
-                    document.getElementById('res-current').innerText = data['လက်ရှိအခြေအနေ'] || '-';
-                    document.getElementById('res-weight').innerText = data['Weight (kg)'] || '0';
-                    document.getElementById('res-baht').innerText = data['Total Cost (Baht)'] || '0';
-                    document.getElementById('res-eta').innerText = data['ETA'] || '-';
-                    
+                    document.getElementById('res-name').innerText = data.Name || '-';
+                    document.getElementById('res-current').innerText = data.BlueBox || '-';
+                    document.getElementById('res-status').innerText = data.BadgeStatus || '-';
+                    document.getElementById('res-route').innerText = data.Route || '-';
+                    document.getElementById('res-weight').innerText = data.Weight || '0';
+                    document.getElementById('res-baht').innerText = data.Cost || '0';
+                    document.getElementById('res-eta').innerText = data.ETA || '-';
                     result.classList.remove('hidden');
                 } else {
                     error.classList.remove('hidden');
