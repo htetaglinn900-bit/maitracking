@@ -68,10 +68,10 @@ export default async function handler(req, res) {
 
         const result = {
             'Name': getValue(page['Name']),
-            // Blue Box အတွက်: 'Current Status' (S အကြီး) ထဲက စာသားကို ယူပါမယ်
-            'Current status': getValue(page['Current Status']), 
-            // အောက်က Status တန်းအတွက်: 'Current status' (s အသေး) ထဲက Done/In progress ကို ယူပါမယ်
-            'Status': getValue(page['Current status']),
+            // Blue Box ထဲမှာ စာသားအရှည်ကြီးတွေ ပေါ်ဖို့အတွက်
+            'Current status': getValue(page['လက်ရှိအခြေအနေ']), 
+            // အောက်က Status တန်းမှာ Done/Progress ပေါ်ဖို့အတွက်
+            'Status': getValue(page['Status']),
             'Route': getValue(page['Route']),
             'Weight (kg)': getValue(page['Weight (kg)']),
             'Total Cost (Baht)': finalCost,
