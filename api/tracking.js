@@ -34,6 +34,9 @@ export default async function handler(req, res) {
 
         const page = data.results[0].properties;
 
+        // --- Debug: Notion ထဲက နာမည်တွေကို Vercel Logs မှာ ကြည့်ရန် (အရေးကြီးသည်) ---
+        console.log("Notion Properties Found:", Object.keys(page));
+
         const getValue = (prop) => {
             if (!prop) return "";
             if (prop.type === 'formula') {
@@ -53,28 +56,20 @@ export default async function handler(req, res) {
             }
         };
 
-        // ဈေးနှုန်းတွက်ချက်မှု Logic (Frozen logic ပါဝင်သည်)
+        // ဈေးနှုန်းတွက်ချက်မှု Logic
         let finalCost = getValue(page['Total Cost (Baht) - Final']);
         if (!finalCost || finalCost === "0") {
             finalCost = getValue(page['Total Cost (Baht)']);
         }
 
-        // Professional Mapping Logic
         const result = {
             'Name': getValue(page['Name']),
             
-            // ၁။ Blue Box အတွက်: နာမည်အမျိုးမျိုးကို စမ်းပြီး ဆွဲယူပါမယ်
-            'Current status': 
-                getValue(page['လက်ရှိအခြေအနေ']) || 
-                getValue(page['Current Status']) || 
-                getValue(page['Current status']) || 
-                "-",
+            // ၁။ Blue Box အတွက်: Notion ထဲက "လက်ရှိအခြေအနေ" (သို့) "Current Status" ကို ယူပါမည်
+            'Current status': getValue(page['လက်ရှိအခြေအနေ']) || getValue(page['Current Status']) || getValue(page['Current status']) || "-",
 
-            // ၂။ Status Badge အတွက်:
-            'Status': 
-                getValue(page['Status']) || 
-                getValue(page['current status']) || 
-                "Processing",
+            // ၂။ အောက်က Status Badge အတွက်: Notion ထဲက "Status" (သို့) "status" ကို ယူပါမည်
+            'Status': getValue(page['Status']) || getValue(page['status']) || "Processing",
 
             'Route': getValue(page['Route']),
             'Weight (kg)': getValue(page['Weight (kg)']),
@@ -88,6 +83,4 @@ export default async function handler(req, res) {
         console.error("Notion Error:", error);
         return res.status(500).json({ error: "Internal Server Error" });
     }
-    // Debug လုပ်ရန် ခဏထည့်ပါ
-console.log("Notion Properties:", Object.keys(page));
 }
