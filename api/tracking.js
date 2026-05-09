@@ -34,18 +34,14 @@ export default async function handler(req, res) {
 
         const page = data.results[0].properties;
 
-        // Notion Property တန်ဖိုးများကို ထုတ်ယူရန် Helper Function
         const getValue = (prop) => {
             if (!prop) return "";
-            
             if (prop.type === 'formula') {
                 const formulaVal = prop.formula;
-                // Formula ရလဒ်သည် Number သို့မဟုတ် String ဖြစ်နိုင်သည်
                 if (formulaVal.type === 'number') return formulaVal.number?.toString() || "0";
                 if (formulaVal.type === 'string') return formulaVal.string || "";
                 return "0";
             }
-            
             switch (prop.type) {
                 case 'title': return prop.title[0]?.plain_text || "";
                 case 'rich_text': return prop.rich_text[0]?.plain_text || "";
@@ -57,20 +53,17 @@ export default async function handler(req, res) {
             }
         };
 
-        // --- ဈေးနှုန်းတွက်ချက်မှု Logic အသစ် ---
-        // ၁။ Final Formula ကို အရင်ယူကြည့်မည်
+        // ဈေးနှုန်းတွက်ချက်မှု Logic (Frozen logic ပါဝင်သည်)
         let finalCost = getValue(page['Total Cost (Baht) - Final']);
-        
-        // ၂။ အကယ်၍ Final ထဲမှာ ဘာမှမရှိခဲ့ရင် (သို့မဟုတ် "0" ဖြစ်နေရင်) အဟောင်းကို သုံးမည်
         if (!finalCost || finalCost === "0") {
             finalCost = getValue(page['Total Cost (Baht)']);
         }
 
         const result = {
             'Name': getValue(page['Name']),
-            // Blue Box ထဲမှာ စာသားအရှည်ကြီးတွေ ပေါ်ဖို့အတွက်
+            // Blue Box ထဲမှာ "ချင်းမိုင်ဂိုဒေါင်မှ..." စာသားများပေါ်ရန်
             'Current status': getValue(page['လက်ရှိအခြေအနေ']), 
-            // အောက်က Status တန်းမှာ Done/Progress ပေါ်ဖို့အတွက်
+            // အောက်က Status တန်းမှာ Done / In progress ပေါ်ရန်
             'Status': getValue(page['Status']),
             'Route': getValue(page['Route']),
             'Weight (kg)': getValue(page['Weight (kg)']),
