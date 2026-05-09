@@ -88,4 +88,6 @@ export default async function handler(req, res) {
         console.error("Notion Error:", error);
         return res.status(500).json({ error: "Internal Server Error" });
     }
+    // Debug လုပ်ရန် ခဏထည့်ပါ
+console.log("Notion Properties:", Object.keys(page));
 }
