@@ -15,9 +15,9 @@
 </head>
 <body class="p-4 md:p-10">
     <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
-        <!-- Logo -->
+        <!-- Logo (Bigger Logo Size Update: w-48) -->
         <div class="text-center mb-6">
-            <img src="Logo2.png" alt="Logo" class="w-32 mx-auto">
+            <img src="Logo2.png" alt="Logo" class="w-48 md:w-56 mx-auto h-auto object-contain">
         </div>
         
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">📦 ပါဆယ်ခြေရာခံမည်</h1>
@@ -118,7 +118,6 @@
                     const pointsUsed = parseFloat(data.PointsUsed || "0");
                     const totalBalance = parseFloat(data.CustomerTotalBalance || "0");
 
-                    // Flexible condition to render point box
                     if (data.HasB2B || mPointEarned > 0 || pointsUsed > 0 || totalBalance > 0) {
                         mPointBox.classList.remove('hidden');
 
