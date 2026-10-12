@@ -4,10 +4,10 @@ export default async function handler(req, res) {
 
     const NOTION_TOKEN = process.env.NOTION_TOKEN;
     const TRACKING_DB_ID = process.env.NOTION_DATABASE_ID;
-    const CUSTOMER_DB_ID = process.env.NOTION_CUSTOMER_DATABASE_ID || process.env.NOTION_DATABASE_ID;
+    const CUSTOMER_DB_ID = process.env.NOTION_CUSTOMER_DATABASE_ID;
 
     try {
-        // Step 1: Query Order from Tracking DB
+        // 1. Fetch Order from Tracking DB
         const trackingRes = await fetch(`https://api.notion.com/v1/databases/${TRACKING_DB_ID}/query`, {
             method: 'POST',
             headers: {
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
         const page = trackingData.results[0].properties;
 
-        // Accurate Property Parser
+        // Accurate Value Extractor
         const parseProp = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
@@ -59,78 +59,59 @@ export default async function handler(req, res) {
             }
         };
 
-        const customerName = parseProp(page['Name']);
-        const weightNum = parseFloat(parseProp(page['Weight (kg)']) || "0");
+        // Price Priority Logic
+        let finalCost = parseProp(page['Total Cost (Baht) - Final']);
+        if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht)']);
+        if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht) - Locked']);
 
-        // Price Extraction with Robust Priority Fallback
-        let costVal = parseFloat(parseProp(page['Total Cost (Baht) - Final']));
-        if (!costVal || costVal === 0) costVal = parseFloat(parseProp(page['Total Cost (Baht)']));
-        if (!costVal || costVal === 0) costVal = parseFloat(parseProp(page['Total Cost (Baht) - Locked']));
+        // Directly fetch 'M Point Earn' from Tracking DB
+        const mPointEarned = parseProp(page['M Point Earn']);
 
-        const finalCostStr = costVal.toString();
-
-        // Check B2B Profile Link
+        // Check B2B Customer Relation Link
         const profileRelation = page['MAI CARGO - B2B Customer Profiles'];
-        const isB2B = profileRelation && profileRelation.relation && profileRelation.relation.length > 0;
+        const hasB2BRelation = profileRelation && profileRelation.relation && profileRelation.relation.length > 0;
 
-        // Direct Fail-Safe M Point Calculation Logic (Cost / 100)
-        let calculatedEarned = 0;
-        if (isB2B || weightNum >= 50) {
-            calculatedEarned = Math.floor(costVal / 100);
-        }
-
-        // Try reading Notion formula value, fallback to calculated if zero
-        let mPointEarned = parseFloat(parseProp(page['M Point Earned']) || "0");
-        if (mPointEarned === 0 && calculatedEarned > 0) {
-            mPointEarned = calculatedEarned;
-        }
-
-        const pointsUsed = parseProp(page['Points Used']);
-
-        // Step 2: Fetch Direct Customer Total Balance from B2B Profile Database
+        let pointsUsed = parseProp(page['Points Used']);
         let customerTotalBalance = "0";
 
-        if (customerName && CUSTOMER_DB_ID) {
+        // 2. Fetch Customer Profiles Database directly using B2B Page ID
+        if (hasB2BRelation) {
+            const customerPageId = profileRelation.relation[0].id;
             try {
-                const profileRes = await fetch(`https://api.notion.com/v1/databases/${CUSTOMER_DB_ID}/query`, {
-                    method: 'POST',
+                const custRes = await fetch(`https://api.notion.com/v1/pages/${customerPageId}`, {
+                    method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${NOTION_TOKEN}`,
-                        'Notion-Version': '2022-06-28',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        filter: {
-                            or: [
-                                { property: 'Customer Name', title: { equals: customerName } },
-                                { property: 'Customer Name', rich_text: { equals: customerName } }
-                            ]
-                        }
-                    })
+                        'Notion-Version': '2022-06-28'
+                    }
                 });
 
-                const profileData = await profileRes.json();
-                if (profileData.results && profileData.results.length > 0) {
-                    const custProps = profileData.results[0].properties;
+                const custData = await custRes.json();
+                if (custData && custData.properties) {
+                    const custProps = custData.properties;
                     customerTotalBalance = parseProp(custProps['Current Balance']);
+                    
+                    // Fallback to Profile DB Points Used if present
+                    const profUsed = parseProp(custProps['Points Used']);
+                    if (profUsed && profUsed !== "0") pointsUsed = profUsed;
                 }
-            } catch (pErr) {
-                console.error("Profile DB Error:", pErr);
+            } catch (custErr) {
+                console.error("Error fetching Customer Profile:", custErr);
             }
         }
 
         const result = {
-            'Name': customerName,
+            'Name': parseProp(page['Name']),
             'BlueBox': parseProp(page['လက်ရှိအခြေအနေ']),
             'BadgeStatus': parseProp(page['Status']),
             'Route': parseProp(page['Route']),
-            'Weight': weightNum.toString(),
-            'Cost': finalCostStr,
+            'Weight': parseProp(page['Weight (kg)']),
+            'Cost': finalCost,
             'ETA': parseProp(page['ETA']),
-            'MPointEarned': mPointEarned.toString(),
+            'MPointEarned': mPointEarned,
             'PointsUsed': pointsUsed,
             'CustomerTotalBalance': customerTotalBalance,
-            'HasB2B': isB2B
+            'HasB2B': hasB2BRelation
         };
 
         return res.status(200).json(result);
