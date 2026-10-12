@@ -69,7 +69,7 @@ export default async function handler(req, res) {
         if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht) - Locked']);
 
         // Safely extract Earned and Used points for current order
-        const currentEarned = parseFloat(getPropValByPartialName(page, 'M Point Earn') || "0");
+        const currentEarned = parseFloat(getPropValByPartialName(page, 'M Point Earned') || "0");
         const currentUsed = parseFloat(getPropValByPartialName(page, 'Points Used') || "0");
 
         // Check B2B Link
