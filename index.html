@@ -53,13 +53,23 @@
                         <span>⭐️ MAI POINT PRIVILEGE</span>
                         <span class="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px]">B2B Reward</span>
                     </div>
-                    <div class="flex justify-between text-xs text-emerald-700">
-                        <span>ရရှိသည့် M Point</span>
+                    
+                    <!-- Earned Point Row -->
+                    <div id="mpoint-earned-row" class="flex justify-between text-xs text-emerald-700">
+                        <span>ဒီအော်ဒါအတွက် ရရှိသည့် M Point</span>
                         <span id="res-mpoint-earned" class="font-bold"></span>
                     </div>
+                    
+                    <!-- Used Point Row -->
                     <div id="mpoint-used-row" class="flex justify-between text-xs text-emerald-700 hidden">
-                        <span>အသုံးပြုခဲ့သည့် M Point</span>
+                        <span>ဒီအော်ဒါတွင် အသုံးပြုခဲ့သည့် M Point</span>
                         <span id="res-mpoint-used" class="font-bold text-red-500"></span>
+                    </div>
+
+                    <!-- Total Net Balance Row -->
+                    <div class="flex justify-between text-xs font-bold text-emerald-900 border-t border-emerald-200 pt-1 mt-1">
+                        <span>ဒီအော်ဒါအပြီး ကျန်ရှိသည့် M Point</span>
+                        <span id="res-mpoint-total" class="text-emerald-700"></span>
                     </div>
                 </div>
 
@@ -103,23 +113,43 @@
                     document.getElementById('res-baht').innerText = data.Cost || '0';
                     document.getElementById('res-eta').innerText = data.ETA || '-';
 
-                  // M Point Dynamic Display Logic
-const mPointBox = document.getElementById('mpoint-box');
-const mPointEarned = parseFloat(data.MPointEarned || "0");
-const pointsUsed = parseFloat(data.PointsUsed || "0");
+                    // Dynamic M Point Total & Summary Logic
+                    const mPointBox = document.getElementById('mpoint-box');
+                    const mPointEarned = parseFloat(data.MPointEarned || "0");
+                    const pointsUsed = parseFloat(data.PointsUsed || "0");
+                    const netMPoint = parseFloat(data.NetMPoint || "0");
 
-// Show M Point Box if order earns points OR if it's a B2B Customer order
-if (mPointEarned > 0 || pointsUsed > 0) {
-    document.getElementById('res-mpoint-earned').innerText = `+${mPointEarned} Points`;
-    mPointBox.classList.remove('hidden');
+                    // Show Box if order earns points, uses points, OR has net points balance
+                    if (mPointEarned > 0 || pointsUsed > 0 || netMPoint > 0) {
+                        mPointBox.classList.remove('hidden');
 
-    const mPointUsedRow = document.getElementById('mpoint-used-row');
-    if (pointsUsed > 0) {
-        document.getElementById('res-mpoint-used').innerText = `-${pointsUsed} Points`;
-        mPointUsedRow.classList.remove('hidden');
-    } else {
-        mPointUsedRow.classList.add('hidden');
-    }
-} else {
-    mPointBox.classList.add('hidden');
-}
+                        // Earned Row
+                        document.getElementById('res-mpoint-earned').innerText = `+${mPointEarned} Points`;
+
+                        // Used Row
+                        const mPointUsedRow = document.getElementById('mpoint-used-row');
+                        if (pointsUsed > 0) {
+                            document.getElementById('res-mpoint-used').innerText = `-${pointsUsed} Points`;
+                            mPointUsedRow.classList.remove('hidden');
+                        } else {
+                            mPointUsedRow.classList.add('hidden');
+                        }
+
+                        // Total Net Balance Row
+                        document.getElementById('res-mpoint-total').innerText = `${netMPoint} Points`;
+                    } else {
+                        mPointBox.classList.add('hidden');
+                    }
+
+                    result.classList.remove('hidden');
+                } else {
+                    error.classList.remove('hidden');
+                }
+            } catch (err) {
+                loading.classList.add('hidden');
+                error.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
