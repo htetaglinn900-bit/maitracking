@@ -47,7 +47,7 @@
                 <div class="flex justify-between border-b pb-2"><span class="text-gray-500">Weight (kg)</span><span id="res-weight" class="font-semibold text-gray-800"></span></div>
                 <div class="flex justify-between border-b pb-2"><span class="text-gray-500 text-blue-600">Total Cost (Baht)</span><span id="res-baht" class="font-bold text-blue-700"></span></div>
                 
-                <!-- M Point Privilege Box (Only shows if points earned > 0) -->
+                <!-- M Point Privilege Box -->
                 <div id="mpoint-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-1.5 my-2">
                     <div class="flex justify-between items-center text-xs font-bold text-emerald-800 border-b border-emerald-200 pb-1">
                         <span>⭐️ MAI POINT PRIVILEGE</span>
@@ -103,10 +103,10 @@
                     document.getElementById('res-baht').innerText = data.Cost || '0';
                     document.getElementById('res-eta').innerText = data.ETA || '-';
 
-                    // M Point Dynamic Display Logic
+                    // M Point Dynamic Display Logic (Safe Float/Int Parsing)
                     const mPointBox = document.getElementById('mpoint-box');
-                    const mPointEarned = parseInt(data.MPointEarned || "0");
-                    const pointsUsed = parseInt(data.PointsUsed || "0");
+                    const mPointEarned = parseFloat(data.MPointEarned || "0");
+                    const pointsUsed = parseFloat(data.PointsUsed || "0");
 
                     if (mPointEarned > 0) {
                         document.getElementById('res-mpoint-earned').innerText = `+${mPointEarned} Points`;
