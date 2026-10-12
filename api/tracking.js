@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 
     try {
-        // Query Tracking Database
+        // Step 1: Query Tracking Database
         const response = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
             method: 'POST',
             headers: {
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         const pageData = data.results[0];
         const page = pageData.properties;
 
-        // Notion Property Parser
+        // Universal Property Extractor for Notion JSON
         const parseProp = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
@@ -39,10 +39,12 @@ export default async function handler(req, res) {
                 const r = prop.rollup;
                 if (!r) return "0";
                 if (r.type === 'number') return r.number !== null && r.number !== undefined ? r.number.toString() : "0";
-                if (r.type === 'array' && r.array.length > 0) {
+                if (r.type === 'array' && r.array && r.array.length > 0) {
                     const item = r.array[0];
                     if (item.type === 'number') return item.number?.toString() || "0";
-                    if (item.type === 'formula' && item.formula.type === 'number') return item.formula.number?.toString() || "0";
+                    if (item.type === 'formula') {
+                        return item.formula?.number !== null && item.formula?.number !== undefined ? item.formula.number.toString() : "0";
+                    }
                 }
                 return "0";
             }
@@ -57,12 +59,12 @@ export default async function handler(req, res) {
             }
         };
 
-        // Price Logic
+        // Price Fallback Priority
         let finalCost = parseProp(page['Total Cost (Baht) - Final']);
         if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht)']);
         if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht) - Locked']);
 
-        // Fetch Customer Profile Page for Cumulative Total Balance
+        // Step 2: Fetch Cumulative Balance directly from B2B Customer Profile
         let customerTotalBalance = "0";
         const profileRelation = page['MAI CARGO - B2B Customer Profiles'];
         const hasB2BProfile = profileRelation && profileRelation.relation && profileRelation.relation.length > 0;
@@ -79,7 +81,7 @@ export default async function handler(req, res) {
                 });
                 const profileData = await profileRes.json();
                 if (profileData && profileData.properties) {
-                    // Extract Current Balance from Customer Profile
+                    // Extract Current Balance (Check 'Current Balance' formula/rollup property)
                     customerTotalBalance = parseProp(profileData.properties['Current Balance']);
                 }
             } catch (pErr) {
