@@ -21,9 +21,10 @@ export default async function handler(req, res) {
         const data = await response.json();
         if (!data.results || data.results.length === 0) return res.status(404).json({ error: "ID Not Found" });
 
-        const page = data.results[0].properties;
+        const pageData = data.results[0];
+        const page = pageData.properties;
 
-        const getValue = (prop) => {
+        const parseProp = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
                 const f = prop.formula;
@@ -53,25 +54,44 @@ export default async function handler(req, res) {
         };
 
         // Price Logic
-        let finalCost = getValue(page['Total Cost (Baht) - Final']);
-        if (!finalCost || finalCost === "0") finalCost = getValue(page['Total Cost (Baht)']);
+        let finalCost = parseProp(page['Total Cost (Baht) - Final']);
+        if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht)']);
 
-        // Fetch Customer Profile Total Balance Rollup/Relation Value
-        const customerProfileRelation = page['MAI CARGO - B2B Customer Profiles'];
-        const isB2BCustomer = customerProfileRelation && customerProfileRelation.relation && customerProfileRelation.relation.length > 0;
+        // Fetch Customer Profile Page to get EXACT Total Cumulative Balance
+        let customerTotalBalance = "0";
+        const profileRelation = page['MAI CARGO - B2B Customer Profiles'];
+        
+        if (profileRelation && profileRelation.relation && profileRelation.relation.length > 0) {
+            const customerPageId = profileRelation.relation[0].id;
+            try {
+                const profileRes = await fetch(`https://api.notion.com/v1/pages/${customerPageId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${NOTION_TOKEN}`,
+                        'Notion-Version': '2022-06-28'
+                    }
+                });
+                const profileData = await profileRes.json();
+                if (profileData && profileData.properties) {
+                    customerTotalBalance = parseProp(profileData.properties['Current Balance']);
+                }
+            } catch (err) {
+                console.error("Error fetching profile:", err);
+            }
+        }
 
         const result = {
-            'Name': getValue(page['Name']),
-            'BlueBox': getValue(page['လက်ရှိအခြေအနေ']),
-            'BadgeStatus': getValue(page['Status']),
-            'Route': getValue(page['Route']),
-            'Weight': getValue(page['Weight (kg)']),
+            'Name': parseProp(page['Name']),
+            'BlueBox': parseProp(page['လက်ရှိအခြေအနေ']),
+            'BadgeStatus': parseProp(page['Status']),
+            'Route': parseProp(page['Route']),
+            'Weight': parseProp(page['Weight (kg)']),
             'Cost': finalCost,
-            'ETA': getValue(page['ETA']),
-            'MPointEarned': getValue(page['M Point Earned']),
-            'PointsUsed': getValue(page['Points Used']),
-            'NetMPoint': getValue(page['Net M Point']),
-            'IsB2B': isB2BCustomer
+            'ETA': parseProp(page['ETA']),
+            'MPointEarned': parseProp(page['M Point Earned']),
+            'PointsUsed': parseProp(page['Points Used']),
+            'CustomerTotalBalance': customerTotalBalance,
+            'HasProfile': profileRelation && profileRelation.relation.length > 0
         };
 
         return res.status(200).json(result);
