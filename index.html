@@ -47,29 +47,17 @@
                 <div class="flex justify-between border-b pb-2"><span class="text-gray-500">Weight (kg)</span><span id="res-weight" class="font-semibold text-gray-800"></span></div>
                 <div class="flex justify-between border-b pb-2"><span class="text-gray-500 text-blue-600">Total Cost (Baht)</span><span id="res-baht" class="font-bold text-blue-700"></span></div>
                 
-                <!-- M Point Privilege Box -->
-                <div id="mpoint-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-1.5 my-2">
-                    <div class="flex justify-between items-center text-xs font-bold text-emerald-800 border-b border-emerald-200 pb-1">
+                <!-- Customer Total M Point Privilege Box -->
+                <div id="mpoint-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2 my-2">
+                    <div class="flex justify-between items-center text-xs font-bold text-emerald-800 border-b border-emerald-200 pb-1.5">
                         <span>⭐️ MAI POINT PRIVILEGE</span>
-                        <span class="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px]">B2B Reward</span>
+                        <span class="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px]">B2B VIP Reward</span>
                     </div>
                     
-                    <!-- Earned Point Row -->
-                    <div id="mpoint-earned-row" class="flex justify-between text-xs text-emerald-700">
-                        <span>ဒီအော်ဒါအတွက် ရရှိသည့် M Point</span>
-                        <span id="res-mpoint-earned" class="font-bold"></span>
-                    </div>
-                    
-                    <!-- Used Point Row -->
-                    <div id="mpoint-used-row" class="flex justify-between text-xs text-emerald-700 hidden">
-                        <span>ဒီအော်ဒါတွင် အသုံးပြုခဲ့သည့် M Point</span>
-                        <span id="res-mpoint-used" class="font-bold text-red-500"></span>
-                    </div>
-
-                    <!-- Total Net Balance Row -->
-                    <div class="flex justify-between text-xs font-bold text-emerald-900 border-t border-emerald-200 pt-1 mt-1">
-                        <span>ဒီအော်ဒါအပြီး ကျန်ရှိသည့် M Point</span>
-                        <span id="res-mpoint-total" class="text-emerald-700"></span>
+                    <!-- Total Customer Cumulative Balance -->
+                    <div class="flex justify-between items-center text-sm font-bold text-emerald-900 pt-1">
+                        <span>လက်ရှိ စုစုပေါင်း M Point Balance</span>
+                        <span id="res-mpoint-total" class="text-base text-emerald-600 font-extrabold"></span>
                     </div>
                 </div>
 
@@ -113,29 +101,13 @@
                     document.getElementById('res-baht').innerText = data.Cost || '0';
                     document.getElementById('res-eta').innerText = data.ETA || '-';
 
-                    // Dynamic M Point Total & Summary Logic
+                    // Display Cumulative Customer Total M Point Balance
                     const mPointBox = document.getElementById('mpoint-box');
-                    const mPointEarned = parseFloat(data.MPointEarned || "0");
-                    const pointsUsed = parseFloat(data.PointsUsed || "0");
                     const netMPoint = parseFloat(data.NetMPoint || "0");
 
-                    // Show Box if order earns points, uses points, OR has net points balance
-                    if (mPointEarned > 0 || pointsUsed > 0 || netMPoint > 0) {
+                    // Show Box if Customer is B2B linked or has points
+                    if (data.IsB2B || netMPoint > 0 || data.MPointEarned > 0) {
                         mPointBox.classList.remove('hidden');
-
-                        // Earned Row
-                        document.getElementById('res-mpoint-earned').innerText = `+${mPointEarned} Points`;
-
-                        // Used Row
-                        const mPointUsedRow = document.getElementById('mpoint-used-row');
-                        if (pointsUsed > 0) {
-                            document.getElementById('res-mpoint-used').innerText = `-${pointsUsed} Points`;
-                            mPointUsedRow.classList.remove('hidden');
-                        } else {
-                            mPointUsedRow.classList.add('hidden');
-                        }
-
-                        // Total Net Balance Row
                         document.getElementById('res-mpoint-total').innerText = `${netMPoint} Points`;
                     } else {
                         mPointBox.classList.add('hidden');
