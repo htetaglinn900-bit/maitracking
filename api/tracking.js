@@ -23,7 +23,6 @@ export default async function handler(req, res) {
 
         const page = data.results[0].properties;
 
-        // Enhanced Value Extractor to safely extract Formula Numbers
         const getValue = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
@@ -53,14 +52,8 @@ export default async function handler(req, res) {
             }
         };
 
-        // Price Logic
         let finalCost = getValue(page['Total Cost (Baht) - Final']);
         if (!finalCost || finalCost === "0") finalCost = getValue(page['Total Cost (Baht)']);
-
-        // Safely Extract M Point Properties
-        const mPointEarned = getValue(page['M Point Earned']);
-        const pointsUsed = getValue(page['Points Used']);
-        const netMPoint = getValue(page['Net M Point']);
 
         const result = {
             'Name': getValue(page['Name']),
@@ -70,9 +63,9 @@ export default async function handler(req, res) {
             'Weight': getValue(page['Weight (kg)']),
             'Cost': finalCost,
             'ETA': getValue(page['ETA']),
-            'MPointEarned': mPointEarned,
-            'PointsUsed': pointsUsed,
-            'NetMPoint': netMPoint
+            'MPointEarned': getValue(page['M Point Earned']),
+            'PointsUsed': getValue(page['Points Used']),
+            'NetMPoint': getValue(page['Net M Point'])
         };
 
         return res.status(200).json(result);
