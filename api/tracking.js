@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     const CUSTOMER_DB_ID = process.env.NOTION_CUSTOMER_DATABASE_ID;
 
     try {
-        // 1. Fetch Order from Tracking DB
+        // 1. Fetch Order Page from Tracking Database
         const trackingRes = await fetch(`https://api.notion.com/v1/databases/${TRACKING_DB_ID}/query`, {
             method: 'POST',
             headers: {
@@ -25,9 +25,9 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: "ID Not Found" });
         }
 
-        const page = trackingData.results[0].properties;
+        const pageProps = trackingData.results[0].properties;
 
-        // Accurate Value Extractor
+        // Robust Universal Value Extractor
         const parseProp = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
@@ -59,24 +59,43 @@ export default async function handler(req, res) {
             }
         };
 
-        // Price Priority Logic
-        let finalCost = parseProp(page['Total Cost (Baht) - Final']);
-        if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht)']);
-        if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht) - Locked']);
+        // Flexible Column Finder to bypass exact name mismatches
+        const getPropValByKeyword = (props, keyword) => {
+            const matchedKey = Object.keys(props).find(k => k.trim().toLowerCase().includes(keyword.toLowerCase()));
+            return matchedKey ? parseProp(props[matchedKey]) : "0";
+        };
 
-        // Directly fetch 'M Point Earn' from Tracking DB
-        const mPointEarned = parseProp(page['M Point Earn']);
+        const customerName = parseProp(pageProps['Name']);
+        const weightVal = parseProp(pageProps['Weight (kg)']);
 
-        // Check B2B Customer Relation Link
-        const profileRelation = page['MAI CARGO - B2B Customer Profiles'];
-        const hasB2BRelation = profileRelation && profileRelation.relation && profileRelation.relation.length > 0;
+        // Price Fallback Priority
+        let finalCost = parseProp(pageProps['Total Cost (Baht) - Final']);
+        if (!finalCost || finalCost === "0") finalCost = parseProp(pageProps['Total Cost (Baht)']);
+        if (!finalCost || finalCost === "0") finalCost = parseProp(pageProps['Total Cost (Baht) - Locked']);
 
-        let pointsUsed = parseProp(page['Points Used']);
+        // 1. Earned Points from Tracking DB
+        let mPointEarned = getPropValByKeyword(pageProps, 'M Point Earn');
+        if (!mPointEarned || mPointEarned === "0") {
+            // Fallback calculation if Notion Formula returns 0
+            const costNum = parseFloat(finalCost || "0");
+            const wNum = parseFloat(weightVal || "0");
+            if (costNum > 0 && (wNum >= 50 || pageProps['MAI CARGO - B2B Customer Profiles']?.relation?.length > 0)) {
+                mPointEarned = Math.floor(costNum / 100).toString();
+            }
+        }
+
+        let pointsUsed = getPropValByKeyword(pageProps, 'Points Used');
+
+        // 2. Extract Customer Relation Link
+        const relationProp = Object.keys(pageProps).find(k => k.toLowerCase().includes('b2b customer profiles'));
+        const relationObj = relationProp ? pageProps[relationProp] : null;
+        const hasB2BRelation = relationObj && relationObj.relation && relationObj.relation.length > 0;
+
         let customerTotalBalance = "0";
 
-        // 2. Fetch Customer Profiles Database directly using B2B Page ID
+        // Fetch Customer Profiles Database directly using B2B Customer Page ID
         if (hasB2BRelation) {
-            const customerPageId = profileRelation.relation[0].id;
+            const customerPageId = relationObj.relation[0].id;
             try {
                 const custRes = await fetch(`https://api.notion.com/v1/pages/${customerPageId}`, {
                     method: 'GET',
@@ -89,25 +108,24 @@ export default async function handler(req, res) {
                 const custData = await custRes.json();
                 if (custData && custData.properties) {
                     const custProps = custData.properties;
-                    customerTotalBalance = parseProp(custProps['Current Balance']);
+                    customerTotalBalance = getPropValByKeyword(custProps, 'Current Balance');
                     
-                    // Fallback to Profile DB Points Used if present
-                    const profUsed = parseProp(custProps['Points Used']);
+                    const profUsed = getPropValByKeyword(custProps, 'Points Used');
                     if (profUsed && profUsed !== "0") pointsUsed = profUsed;
                 }
             } catch (custErr) {
-                console.error("Error fetching Customer Profile:", custErr);
+                console.error("Error fetching Customer Profile Page:", custErr);
             }
         }
 
         const result = {
-            'Name': parseProp(page['Name']),
-            'BlueBox': parseProp(page['လက်ရှိအခြေအနေ']),
-            'BadgeStatus': parseProp(page['Status']),
-            'Route': parseProp(page['Route']),
-            'Weight': parseProp(page['Weight (kg)']),
+            'Name': customerName,
+            'BlueBox': parseProp(pageProps['လက်ရှိအခြေအနေ']),
+            'BadgeStatus': parseProp(pageProps['Status']),
+            'Route': parseProp(pageProps['Route']),
+            'Weight': weightVal,
             'Cost': finalCost,
-            'ETA': parseProp(page['ETA']),
+            'ETA': parseProp(pageProps['ETA']),
             'MPointEarned': mPointEarned,
             'PointsUsed': pointsUsed,
             'CustomerTotalBalance': customerTotalBalance,
@@ -116,6 +134,6 @@ export default async function handler(req, res) {
 
         return res.status(200).json(result);
     } catch (error) {
-        return res.status(500).json({ error: "Server Error" });
+        return res.status(500).json({ error: "Server Error", details: error.message });
     }
 }
