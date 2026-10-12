@@ -28,6 +28,13 @@ export default async function handler(req, res) {
                 const formulaVal = prop.formula;
                 return formulaVal.number?.toString() || formulaVal.string || "0";
             }
+            if (prop.type === 'rollup') {
+                const rollupVal = prop.rollup;
+                if (rollupVal.type === 'number') return rollupVal.number?.toString() || "0";
+                if (rollupVal.type === 'array') {
+                    return rollupVal.array[0]?.number?.toString() || rollupVal.array[0]?.title[0]?.plain_text || "0";
+                }
+            }
             switch (prop.type) {
                 case 'title': return prop.title[0]?.plain_text || "";
                 case 'rich_text': return prop.rich_text[0]?.plain_text || "";
@@ -35,6 +42,7 @@ export default async function handler(req, res) {
                 case 'status': return prop.status?.name || "";
                 case 'number': return prop.number?.toString() || "0";
                 case 'date': return prop.date?.start || "";
+                case 'relation': return prop.relation.length > 0 ? "Linked" : "";
                 default: return "";
             }
         };
@@ -43,15 +51,18 @@ export default async function handler(req, res) {
         let finalCost = getValue(page['Total Cost (Baht) - Final']);
         if (!finalCost || finalCost === "0") finalCost = getValue(page['Total Cost (Baht)']);
 
-        // Professional Mapping (Backend)
+        // Professional Mapping (Backend) including M Point Data
         const result = {
             'Name': getValue(page['Name']),
-            'BlueBox': getValue(page['လက်ရှိအခြေအနေ']), // Blue Box အတွက် သီးသန့် Key
-            'BadgeStatus': getValue(page['Status']),      // Status Row အတွက် သီးသန့် Key
+            'BlueBox': getValue(page['လက်ရှိအခြေအနေ']),
+            'BadgeStatus': getValue(page['Status']),
             'Route': getValue(page['Route']),
             'Weight': getValue(page['Weight (kg)']),
             'Cost': finalCost,
-            'ETA': getValue(page['ETA'])
+            'ETA': getValue(page['ETA']),
+            'MPointEarned': getValue(page['M Point Earned']),
+            'PointsUsed': getValue(page['Points Used']),
+            'NetMPoint': getValue(page['Net M Point'])
         };
 
         return res.status(200).json(result);
