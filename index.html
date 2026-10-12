@@ -113,20 +113,20 @@
                     document.getElementById('res-baht').innerText = data.Cost || '0';
                     document.getElementById('res-eta').innerText = data.ETA || '-';
 
-                    // Render M Point Privilege
+                    // M Point Dynamic Logic (Always display for B2B Profile)
                     const mPointBox = document.getElementById('mpoint-box');
                     const mPointEarned = parseFloat(data.MPointEarned || "0");
                     const pointsUsed = parseFloat(data.PointsUsed || "0");
                     const totalBalance = parseFloat(data.CustomerTotalBalance || "0");
 
-                    // Show Card if order has points OR customer has B2B profile
+                    // Show M Point Box if Customer has B2B Profile OR if there are points
                     if (data.HasB2B || mPointEarned > 0 || pointsUsed > 0 || totalBalance > 0) {
                         mPointBox.classList.remove('hidden');
 
-                        // 1. Earned Points
+                        // 1. Order Earned Points
                         document.getElementById('res-mpoint-earned').innerText = `+${mPointEarned} Points`;
 
-                        // 2. Used Points
+                        // 2. Order Used Points
                         const mPointUsedRow = document.getElementById('mpoint-used-row');
                         if (pointsUsed > 0) {
                             document.getElementById('res-mpoint-used').innerText = `-${pointsUsed} Points`;
@@ -135,7 +135,7 @@
                             mPointUsedRow.classList.add('hidden');
                         }
 
-                        // 3. Cumulative Balance from B2B Profile DB
+                        // 3. Customer Total Cumulative Balance
                         document.getElementById('res-mpoint-total').innerText = `${totalBalance} Points`;
                     } else {
                         mPointBox.classList.add('hidden');
