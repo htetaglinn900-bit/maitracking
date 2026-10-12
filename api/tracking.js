@@ -23,6 +23,7 @@ export default async function handler(req, res) {
 
         const page = data.results[0].properties;
 
+        // Dynamic Extractor for Formula / Rollup / Number Properties
         const getValue = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
@@ -52,8 +53,15 @@ export default async function handler(req, res) {
             }
         };
 
+        // Price Priority: Total Cost (Baht) - Final -> Total Cost (Baht) -> Total Cost (Baht) - Locked
         let finalCost = getValue(page['Total Cost (Baht) - Final']);
         if (!finalCost || finalCost === "0") finalCost = getValue(page['Total Cost (Baht)']);
+        if (!finalCost || finalCost === "0") finalCost = getValue(page['Total Cost (Baht) - Locked']);
+
+        // Safe M Point Values
+        const mPointEarned = getValue(page['M Point Earned']);
+        const pointsUsed = getValue(page['Points Used']);
+        const netMPoint = getValue(page['Net M Point']);
 
         const result = {
             'Name': getValue(page['Name']),
@@ -63,9 +71,9 @@ export default async function handler(req, res) {
             'Weight': getValue(page['Weight (kg)']),
             'Cost': finalCost,
             'ETA': getValue(page['ETA']),
-            'MPointEarned': getValue(page['M Point Earned']),
-            'PointsUsed': getValue(page['Points Used']),
-            'NetMPoint': getValue(page['Net M Point'])
+            'MPointEarned': mPointEarned,
+            'PointsUsed': pointsUsed,
+            'NetMPoint': netMPoint
         };
 
         return res.status(200).json(result);
