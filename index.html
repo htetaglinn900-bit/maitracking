@@ -47,17 +47,29 @@
                 <div class="flex justify-between border-b pb-2"><span class="text-gray-500">Weight (kg)</span><span id="res-weight" class="font-semibold text-gray-800"></span></div>
                 <div class="flex justify-between border-b pb-2"><span class="text-gray-500 text-blue-600">Total Cost (Baht)</span><span id="res-baht" class="font-bold text-blue-700"></span></div>
                 
-                <!-- Customer Total M Point Privilege Box -->
+                <!-- MAI POINT PRIVILEGE BOX -->
                 <div id="mpoint-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2 my-2">
                     <div class="flex justify-between items-center text-xs font-bold text-emerald-800 border-b border-emerald-200 pb-1.5">
                         <span>⭐️ MAI POINT PRIVILEGE</span>
-                        <span class="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px]">B2B VIP Reward</span>
+                        <span class="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px]">B2B Reward</span>
                     </div>
                     
-                    <!-- Total Customer Cumulative Balance -->
-                    <div class="flex justify-between items-center text-sm font-bold text-emerald-900 pt-1">
-                        <span>လက်ရှိ စုစုပေါင်း M Point Balance</span>
-                        <span id="res-mpoint-total" class="text-base text-emerald-600 font-extrabold"></span>
+                    <!-- 1. Point Gain This Order -->
+                    <div class="flex justify-between text-xs text-emerald-700">
+                        <span>ဒီအော်ဒါအတွက် ရရှိသည့် M Point</span>
+                        <span id="res-mpoint-earned" class="font-bold text-emerald-800"></span>
+                    </div>
+                    
+                    <!-- 2. Point Used (If Any) -->
+                    <div id="mpoint-used-row" class="flex justify-between text-xs text-emerald-700 hidden">
+                        <span>ဒီအော်ဒါတွင် အသုံးပြုခဲ့သည့် M Point</span>
+                        <span id="res-mpoint-used" class="font-bold text-red-500"></span>
+                    </div>
+
+                    <!-- 3. Total Point of Customer (Cumulative) -->
+                    <div class="flex justify-between items-center text-xs font-bold text-emerald-900 border-t border-emerald-200 pt-1.5 mt-1">
+                        <span>Customer စုစုပေါင်း M Point လက်ကျန်</span>
+                        <span id="res-mpoint-total" class="text-sm text-emerald-700 font-extrabold"></span>
                     </div>
                 </div>
 
@@ -101,14 +113,29 @@
                     document.getElementById('res-baht').innerText = data.Cost || '0';
                     document.getElementById('res-eta').innerText = data.ETA || '-';
 
-                    // Display Cumulative Customer Total M Point Balance
+                    // M Point Display Logic
                     const mPointBox = document.getElementById('mpoint-box');
-                    const netMPoint = parseFloat(data.NetMPoint || "0");
+                    const mPointEarned = parseFloat(data.MPointEarned || "0");
+                    const pointsUsed = parseFloat(data.PointsUsed || "0");
+                    const totalBalance = parseFloat(data.CustomerTotalBalance || "0");
 
-                    // Show Box if Customer is B2B linked or has points
-                    if (data.IsB2B || netMPoint > 0 || data.MPointEarned > 0) {
+                    if (data.HasProfile || mPointEarned > 0 || pointsUsed > 0 || totalBalance > 0) {
                         mPointBox.classList.remove('hidden');
-                        document.getElementById('res-mpoint-total').innerText = `${netMPoint} Points`;
+
+                        // 1. Point Earned
+                        document.getElementById('res-mpoint-earned').innerText = `+${mPointEarned} Points`;
+
+                        // 2. Point Used (Only shows if > 0)
+                        const mPointUsedRow = document.getElementById('mpoint-used-row');
+                        if (pointsUsed > 0) {
+                            document.getElementById('res-mpoint-used').innerText = `-${pointsUsed} Points`;
+                            mPointUsedRow.classList.remove('hidden');
+                        } else {
+                            mPointUsedRow.classList.add('hidden');
+                        }
+
+                        // 3. Customer Cumulative Total Balance
+                        document.getElementById('res-mpoint-total').innerText = `${totalBalance} Points`;
                     } else {
                         mPointBox.classList.add('hidden');
                     }
