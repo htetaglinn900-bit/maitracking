@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 
     try {
-        // Step 1: Query Target Order
+        // Step 1: Query Target Order by Parcel ID
         const response = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
             method: 'POST',
             headers: {
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         const pageData = data.results[0];
         const page = pageData.properties;
 
-        // Robust Value Extractor
+        // Smart Universal Parser
         const parseProp = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
                 if (r.type === 'array' && r.array && r.array.length > 0) {
                     const item = r.array[0];
                     if (item.type === 'number') return item.number?.toString() || "0";
-                    if (item.type === 'formula' && item.formula.type === 'number') return item.formula.number?.toString() || "0";
+                    if (item.type === 'formula' && item.formula?.type === 'number') return item.formula.number?.toString() || "0";
                 }
                 return "0";
             }
@@ -57,26 +57,30 @@ export default async function handler(req, res) {
             }
         };
 
-        // Current Order Values
+        // Fuzzy Property Finder to prevent Column Name Mismatches
+        const getPropValByPartialName = (propsMap, keyName) => {
+            const key = Object.keys(propsMap).find(k => k.trim().toLowerCase().includes(keyName.toLowerCase()));
+            return key ? parseProp(propsMap[key]) : "0";
+        };
+
         const customerName = parseProp(page['Name']);
         let finalCost = parseProp(page['Total Cost (Baht) - Final']);
         if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht)']);
         if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht) - Locked']);
 
-        const orderEarned = parseFloat(parseProp(page['M Point Earned']) || "0");
-        const orderUsed = parseFloat(parseProp(page['Points Used']) || "0");
+        // Safely extract Earned and Used points for current order
+        const currentEarned = parseFloat(getPropValByPartialName(page, 'M Point Earn') || "0");
+        const currentUsed = parseFloat(getPropValByPartialName(page, 'Points Used') || "0");
 
-        // Step 2: Out of the Box - Calculate Customer Cumulative Points directly from DB
-        let totalCustomerSum = 0;
-        let isB2BCustomer = false;
-
+        // Check B2B Link
         const profileRelation = page['MAI CARGO - B2B Customer Profiles'];
-        if (profileRelation && profileRelation.relation && profileRelation.relation.length > 0) {
-            isB2BCustomer = true;
-        }
+        const isB2BCustomer = profileRelation && profileRelation.relation && profileRelation.relation.length > 0;
+
+        // Step 2: Sum Total Cumulative Points for Customer across all orders
+        let totalCustomerSum = 0;
 
         if (customerName) {
-            // Query all orders for this customer to sum total points directly
+            // Fetch ALL orders matching customer Name (using contains/equals on title or rich_text)
             const customerOrdersRes = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
                 method: 'POST',
                 headers: {
@@ -85,16 +89,21 @@ export default async function handler(req, res) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    filter: { property: 'Name', rich_text: { equals: customerName } }
+                    filter: {
+                        or: [
+                            { property: 'Name', title: { equals: customerName } },
+                            { property: 'Name', rich_text: { equals: customerName } }
+                        ]
+                    }
                 })
             });
 
             const customerData = await customerOrdersRes.json();
-            if (customerData.results) {
+            if (customerData.results && customerData.results.length > 0) {
                 customerData.results.forEach(order => {
-                    const props = order.properties;
-                    const earned = parseFloat(parseProp(props['M Point Earned']) || "0");
-                    const used = parseFloat(parseProp(props['Points Used']) || "0");
+                    const p = order.properties;
+                    const earned = parseFloat(getPropValByPartialName(p, 'M Point Earn') || "0");
+                    const used = parseFloat(getPropValByPartialName(p, 'Points Used') || "0");
                     totalCustomerSum += (earned - used);
                 });
             }
@@ -108,8 +117,8 @@ export default async function handler(req, res) {
             'Weight': parseProp(page['Weight (kg)']),
             'Cost': finalCost,
             'ETA': parseProp(page['ETA']),
-            'MPointEarned': orderEarned.toString(),
-            'PointsUsed': orderUsed.toString(),
+            'MPointEarned': currentEarned.toString(),
+            'PointsUsed': currentUsed.toString(),
             'CustomerTotalBalance': totalCustomerSum.toString(),
             'HasB2B': isB2BCustomer
         };
