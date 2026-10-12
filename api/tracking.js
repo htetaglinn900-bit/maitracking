@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 
     try {
-        // Step 1: Query Tracking Database
+        // Step 1: Query Target Order
         const response = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
             method: 'POST',
             headers: {
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         const pageData = data.results[0];
         const page = pageData.properties;
 
-        // Universal Property Extractor for Notion JSON
+        // Robust Value Extractor
         const parseProp = (prop) => {
             if (!prop) return "0";
             if (prop.type === 'formula') {
@@ -42,9 +42,7 @@ export default async function handler(req, res) {
                 if (r.type === 'array' && r.array && r.array.length > 0) {
                     const item = r.array[0];
                     if (item.type === 'number') return item.number?.toString() || "0";
-                    if (item.type === 'formula') {
-                        return item.formula?.number !== null && item.formula?.number !== undefined ? item.formula.number.toString() : "0";
-                    }
+                    if (item.type === 'formula' && item.formula.type === 'number') return item.formula.number?.toString() || "0";
                 }
                 return "0";
             }
@@ -59,48 +57,61 @@ export default async function handler(req, res) {
             }
         };
 
-        // Price Fallback Priority
+        // Current Order Values
+        const customerName = parseProp(page['Name']);
         let finalCost = parseProp(page['Total Cost (Baht) - Final']);
         if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht)']);
         if (!finalCost || finalCost === "0") finalCost = parseProp(page['Total Cost (Baht) - Locked']);
 
-        // Step 2: Fetch Cumulative Balance directly from B2B Customer Profile
-        let customerTotalBalance = "0";
-        const profileRelation = page['MAI CARGO - B2B Customer Profiles'];
-        const hasB2BProfile = profileRelation && profileRelation.relation && profileRelation.relation.length > 0;
+        const orderEarned = parseFloat(parseProp(page['M Point Earned']) || "0");
+        const orderUsed = parseFloat(parseProp(page['Points Used']) || "0");
 
-        if (hasB2BProfile) {
-            const profilePageId = profileRelation.relation[0].id;
-            try {
-                const profileRes = await fetch(`https://api.notion.com/v1/pages/${profilePageId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${NOTION_TOKEN}`,
-                        'Notion-Version': '2022-06-28'
-                    }
+        // Step 2: Out of the Box - Calculate Customer Cumulative Points directly from DB
+        let totalCustomerSum = 0;
+        let isB2BCustomer = false;
+
+        const profileRelation = page['MAI CARGO - B2B Customer Profiles'];
+        if (profileRelation && profileRelation.relation && profileRelation.relation.length > 0) {
+            isB2BCustomer = true;
+        }
+
+        if (customerName) {
+            // Query all orders for this customer to sum total points directly
+            const customerOrdersRes = await fetch(`https://api.notion.com/v1/databases/${DATABASE_ID}/query`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${NOTION_TOKEN}`,
+                    'Notion-Version': '2022-06-28',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filter: { property: 'Name', rich_text: { equals: customerName } }
+                })
+            });
+
+            const customerData = await customerOrdersRes.json();
+            if (customerData.results) {
+                customerData.results.forEach(order => {
+                    const props = order.properties;
+                    const earned = parseFloat(parseProp(props['M Point Earned']) || "0");
+                    const used = parseFloat(parseProp(props['Points Used']) || "0");
+                    totalCustomerSum += (earned - used);
                 });
-                const profileData = await profileRes.json();
-                if (profileData && profileData.properties) {
-                    // Extract Current Balance (Check 'Current Balance' formula/rollup property)
-                    customerTotalBalance = parseProp(profileData.properties['Current Balance']);
-                }
-            } catch (pErr) {
-                console.error("Profile Fetch Error:", pErr);
             }
         }
 
         const result = {
-            'Name': parseProp(page['Name']),
+            'Name': customerName,
             'BlueBox': parseProp(page['လက်ရှိအခြေအနေ']),
             'BadgeStatus': parseProp(page['Status']),
             'Route': parseProp(page['Route']),
             'Weight': parseProp(page['Weight (kg)']),
             'Cost': finalCost,
             'ETA': parseProp(page['ETA']),
-            'MPointEarned': parseProp(page['M Point Earned']),
-            'PointsUsed': parseProp(page['Points Used']),
-            'CustomerTotalBalance': customerTotalBalance,
-            'HasB2B': hasB2BProfile
+            'MPointEarned': orderEarned.toString(),
+            'PointsUsed': orderUsed.toString(),
+            'CustomerTotalBalance': totalCustomerSum.toString(),
+            'HasB2B': isB2BCustomer
         };
 
         return res.status(200).json(result);
