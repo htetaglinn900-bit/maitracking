@@ -113,7 +113,7 @@
                     document.getElementById('res-baht').innerText = data.Cost || '0';
                     document.getElementById('res-eta').innerText = data.ETA || '-';
 
-                    // Always display M Point Card for B2B or if Customer Total > 0
+                    // Display M Point Privilege
                     const mPointBox = document.getElementById('mpoint-box');
                     const mPointEarned = parseFloat(data.MPointEarned || "0");
                     const pointsUsed = parseFloat(data.PointsUsed || "0");
@@ -122,10 +122,10 @@
                     if (data.HasB2B || totalBalance > 0 || mPointEarned > 0) {
                         mPointBox.classList.remove('hidden');
 
-                        // Earned Points
+                        // 1. Earned Points
                         document.getElementById('res-mpoint-earned').innerText = `+${mPointEarned} Points`;
 
-                        // Used Points
+                        // 2. Used Points
                         const mPointUsedRow = document.getElementById('mpoint-used-row');
                         if (pointsUsed > 0) {
                             document.getElementById('res-mpoint-used').innerText = `-${pointsUsed} Points`;
@@ -134,7 +134,7 @@
                             mPointUsedRow.classList.add('hidden');
                         }
 
-                        // Cumulative Customer Total Sum
+                        // 3. Customer Total Cumulative Balance
                         document.getElementById('res-mpoint-total').innerText = `${totalBalance} Points`;
                     } else {
                         mPointBox.classList.add('hidden');
