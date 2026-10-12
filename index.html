@@ -118,6 +118,7 @@
                     const pointsUsed = parseFloat(data.PointsUsed || "0");
                     const totalBalance = parseFloat(data.CustomerTotalBalance || "0");
 
+                    // Flexible condition to render point box
                     if (data.HasB2B || mPointEarned > 0 || pointsUsed > 0 || totalBalance > 0) {
                         mPointBox.classList.remove('hidden');
 
